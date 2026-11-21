@@ -1,0 +1,22 @@
+{
+  "name": "ultimate-harness",
+  "version": "1.0.0",
+  "description": "Shared agent harness: global rules, reusable skills, and MCP templates installed once per machine so project repositories stay clean.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/khanhchungoc/ultimate-harness.git"
+  },
+  "keywords": [],
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/khanhchungoc/ultimate-harness/issues"
+  },
+  "homepage": "https://github.com/khanhchungoc/ultimate-harness#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.65.1"
+  }
+}

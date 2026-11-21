@@ -1,0 +1,184 @@
+#!/usr/bin/env python3
+"""Cross-platform installation script for craft-agent-skill.
+
+Installs craft-agent-skill into target AI agent runtimes at either User (global)
+or Project level, using symlinks (or Windows directory junctions) or standalone copies.
+
+Zero external dependencies - standard library only.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+# Supported runtime destinations
+DESTINATIONS_USER = {
+    "copilot": Path.home() / ".copilot" / "skills" / "craft-agent-skill",
+    "claude": Path.home() / ".claude" / "skills" / "craft-agent-skill",
+    "codex": Path.home() / ".agents" / "skills" / "craft-agent-skill",
+    "gemini": Path.home() / ".gemini" / "skills" / "craft-agent-skill",
+    "antigravity": Path.home() / ".gemini" / "config" / "skills" / "craft-agent-skill",
+    "kiro": Path.home() / ".kiro" / "skills" / "craft-agent-skill",
+}
+
+def get_project_destinations(project_path: Path) -> dict[str, Path]:
+    return {
+        "copilot": project_path / ".github" / "skills" / "craft-agent-skill",
+        "claude": project_path / ".claude" / "skills" / "craft-agent-skill",
+        "codex": project_path / ".agents" / "skills" / "craft-agent-skill",
+        "gemini": project_path / ".gemini" / "skills" / "craft-agent-skill",
+        "antigravity": project_path / ".gemini" / "skills" / "craft-agent-skill",
+        "kiro": project_path / ".kiro" / "skills" / "craft-agent-skill",
+    }
+
+def normalize_runtime(runtime: str) -> str:
+    r = runtime.lower()
+    if r in ("github-copilot", "vscode-copilot"):
+        return "copilot"
+    if r == "claude-code":
+        return "claude"
+    return r
+
+def remove_existing(target: Path) -> None:
+    if target.is_symlink() or target.is_junction():
+        target.unlink()
+    elif target.is_dir():
+        shutil.rmtree(target)
+    elif target.exists():
+        target.unlink()
+
+def create_link(source: Path, target: Path) -> None:
+    try:
+        # On Windows, try junction first for directories if available to avoid privilege issues
+        if sys.platform == "win32":
+            # Check if directory junction can be created
+            target.parent.mkdir(parents=True, exist_ok=True)
+            try:
+                # Python 3.12+ os.symlink or Path.symlink_to works or fallback
+                target.symlink_to(source, target_is_directory=True)
+            except OSError:
+                # Fallback to mklink /J on Windows if unprivileged symlink fails
+                subprocess.run(
+                    ["cmd.exe", "/c", "mklink", "/J", str(target), str(source)],
+                    capture_output=True,
+                    check=True,
+                )
+        else:
+            target.symlink_to(source, target_is_directory=True)
+    except Exception as e:
+        print(f"  [!] Symlink/junction failed ({e}). Falling back to copy...")
+        shutil.copytree(source, target)
+
+def read_skill_version(repo_root: Path) -> str:
+    """Read metadata.version from SKILL.md frontmatter, falling back to package.json."""
+    skill_path = repo_root / "SKILL.md"
+    try:
+        content = skill_path.read_text(encoding="utf-8")
+    except OSError:
+        content = ""
+    frontmatter = re.match(r"\A---[ \t]*\r?\n(.*?)\r?\n---", content, re.S)
+    if frontmatter:
+        version_match = re.search(
+            r"^\s*version:\s*[\"']?([^\"'\r\n]+)[\"']?\s*$",
+            frontmatter.group(1),
+            re.M,
+        )
+        if version_match:
+            return version_match.group(1).strip()
+    try:
+        pkg = json.loads((repo_root / "package.json").read_text(encoding="utf-8"))
+        if pkg.get("version"):
+            return str(pkg["version"]).strip()
+    except (OSError, ValueError):
+        pass
+    return "unknown"
+
+
+def main() -> int:
+    repo_root = Path(__file__).resolve().parent.parent
+    skill_version = read_skill_version(repo_root)
+
+    parser = argparse.ArgumentParser(
+        description="Install craft-agent-skill into AI agent runtimes (User or Project level)."
+    )
+    parser.add_argument(
+        "--scope", "-s",
+        choices=["user", "project"],
+        default="user",
+        help="Installation scope: 'user' (global) or 'project' (current workspace). Default: user.",
+    )
+    parser.add_argument(
+        "--runtime", "-r",
+        default="all",
+        help="Target runtime harness: all, copilot, claude, codex, gemini, antigravity, kiro. Default: all.",
+    )
+    parser.add_argument(
+        "--mode", "-m",
+        choices=["symlink", "copy"],
+        default="symlink",
+        help="Install mode: symlink (directory link/junction) or copy. Default: symlink.",
+    )
+    parser.add_argument(
+        "--target-path", "-t",
+        default=".",
+        help="Target workspace root for project-level scope. Default: current working directory.",
+    )
+    parser.add_argument(
+        "--version", "-v",
+        action="version",
+        version=f"craft-agent-skill v{skill_version}",
+    )
+
+    args = parser.parse_args()
+
+    target_path = Path(args.target_path).resolve()
+    selected_runtime = normalize_runtime(args.runtime)
+
+    print(f"==> Installing craft-agent-skill v{skill_version}")
+    print(f"    Source:  {repo_root}")
+    print(f"    Scope:   {args.scope}")
+    print(f"    Mode:    {args.mode}")
+    print(f"    Target:  {args.runtime}")
+    print()
+
+    destinations = (
+        DESTINATIONS_USER if args.scope == "user" else get_project_destinations(target_path)
+    )
+
+    if selected_runtime != "all":
+        if selected_runtime not in destinations:
+            print(f"Error: Unknown runtime '{args.runtime}'. Supported: {', '.join(destinations.keys())}, all", file=sys.stderr)
+            return 1
+        targets = {selected_runtime: destinations[selected_runtime]}
+    else:
+        targets = destinations
+
+    installed = 0
+    for rt, dest in targets.items():
+        print(f"==> Processing [{rt}] -> {dest}")
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        if dest.exists() or dest.is_symlink() or (sys.platform == "win32" and dest.is_junction()):
+            print(f"    Existing installation found at {dest}. Replacing...")
+            remove_existing(dest)
+
+        if args.mode == "symlink":
+            create_link(repo_root, dest)
+            print(f"    [+] Linked to {dest}")
+        else:
+            shutil.copytree(repo_root, dest)
+            print(f"    [+] Copied to {dest}")
+        installed += 1
+
+    print()
+    print(f"[SUCCESS] Successfully installed craft-agent-skill v{skill_version} to {installed} target(s).")
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())

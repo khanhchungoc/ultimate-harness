@@ -1,0 +1,64 @@
+---
+name: craft-agent-skill
+description: "Create, update, or audit agents and skills for Copilot, Claude Code, Codex, Gemini, and Kiro, using shared principles and runtime-specific templates."
+metadata:
+  version: "1.0.0"
+---
+
+# Craft Agent & Skill
+
+Produce useful agent customizations whose instructions, dependencies, and outputs fit the requested task and target runtime. Act as a practical agent customization architect: coordinate scoped changes, preserve operational boundaries, and explain findings with evidence.
+
+## Ownership & Resources
+
+Do not copy host-specific instructions into artifacts for another runtime. The skill owns the authoring workflow; supporting files have these distinct roles:
+
+| Resource | Owns | Read when |
+|---|---|---|
+| [Runtime selection and profiles](references/runtime-selection.md) | Target harness, surface, scope, native layout matrix, steering/instruction placement, templates, and runtime checks | Before choosing a format or destination |
+| [Elicitation guide](references/elicitation-guide.md) | Discovery coverage and resolving missing decisions | Creating or materially changing a workflow; unresolved material decisions |
+| [Session distillation](references/session-distillation.md) | Translating feedback without changing its scope | Improving instructions from a conversation or failure |
+| [Review rubric](references/review-rubric.md) | Universal quality criteria and finding format | Reviewing an asset together with its selected runtime profile |
+| [Runtime agent templates](assets/runtimes/) | Native agent templates | Composing a platform-specific agent |
+| [Universal skill template](assets/skill.template.md) | Universal workflow structure | Composing any new skill package |
+| [Validator](scripts/validate_agent_skill.py) | Executable structural checks and CLI help | Verifying files; change it when changing a lint rule |
+
+## Shared Workflow
+
+1. **Establish the request and runtime.** Read the prompt, relevant files, and existing approvals. Follow [runtime selection](references/runtime-selection.md) to establish target harness, scope, native layout, and artifact kind; ask when a material target decision is missing. **Diagnosis before mutation:** When responding to diagnostic inquiries, symptom feedback, or open-ended defect reports, isolate root causes and present proposed remedies first; obtain confirmation before editing files. Select a mode below. Use the elicitation guide for creation or material workflow changes and unresolved decisions, screening evidence before asking.
+2. **Check ownership and enforce Single Source of Truth (SSOT).** Inspect nearby agents, skills, and instruction files.
+   - **Identify the single canonical owner (SSOT) file** for each instruction based on runtime execution (the exact file read when the instruction must be obeyed).
+   - **Mutate ONLY the SSOT file.** Write the instruction once in full. Never echo, summarize, or paraphrase it in other files (no "reminders", abridged bullet points, or shadow duplicates in entrypoints or callers).
+   - **Refer ONLY if strictly necessary (The Placement Reflection Test):** Most instructions need zero external references. If you feel compelled to reference or summarize an instruction from File A to File B, stop and reflect: *Why does File A need this?* If File A needs the rule during its primary workflow, the instruction was placed in the wrong file—move it directly into File A (in-file density first) and remove it from File B. If File A does not need it during its primary workflow, omit the reference entirely.
+   - When placing instructions across layers, use [instruction placement](references/runtime-selection.md#instruction-placement-agent-vs-skill-vs-steering) (agent vs. skill vs. steering), ensuring global steering remains role-agnostic without leaking specialized agent workflow gates.
+3. **Make the scoped change.** Follow the selected mode. Add guidance that changes decisions or supplies needed context. Research external standards when their applicability or current behavior matters. Add scripts for demonstrated repetition or fragile deterministic work; enforce platform-awareness across all created and reviewed scripts:
+   - Determine target OS/shell constraints (POSIX bash, Windows PowerShell/CMD, or cross-platform).
+   - Prefer standard cross-platform interpreters (e.g. Python standard library, Node.js) or provide dual entrypoints (`.sh` + `.ps1`) when scripting is required.
+   - Use language-native path resolvers (`pathlib.Path`, `path.resolve()`) and normalized forward slashes (`/`); avoid hardcoded path separators (`\`), OS-specific environment variables (`%TEMP%`, `$HOME`), and unportable shell idioms (`rm -rf`, `sed -i`, `export`) in universal tasks.
+   - Parallelize independent operations when useful and collect their results before making dependent decisions.
+4. **Verify the result.** Apply the universal rubric plus each selected runtime profile's native checks. Run `scripts/validate_agent_skill.py` for structural linting. Test changed scripts against meaningful failures. For substantial workflows, exercise realistic requests and compare old/new outputs when warranted and supported. Report structural lint, native discovery, and observed task behavior separately for each target.
+5. **Deliver evidence.** Return changed paths, resulting behavior, verification evidence, checks actually run, and unresolved limits. Fix newly introduced failures within scope. After two unsuccessful repair attempts on the same failure, report the evidence and remaining blocker instead of repeating the same action. For review-only requests, return findings without applying repairs.
+
+## Mode 1: Creation
+
+- Define the intended request, activation boundary, inputs, output, and success criteria from the available evidence.
+- After elicitation, conduct ecosystem & domain research ([elicitation guide](references/elicitation-guide.md#post-elicitation-ecosystem--domain-research)) to check for existing skills and domain standards before authoring.
+- Compose the common body scaffold with the selected native wrapper from [assets/runtimes/](assets/runtimes/). Replace placeholders and remove unused sections and authoring notes.
+- For agents, define responsibility and tool access; link procedural skills with dispatch conditions. Restrict tools to the workflow's needs for runtimes supporting frontmatter tools.
+- For skills, put selection criteria in the frontmatter description. Practice **in-file density first**: keep self-contained criteria, decision tables, and rules directly in `SKILL.md`, splitting into `references/` or `assets/` only when the always-loaded entrypoint exceeds its context budget (`> 20 KB`) or contains mutually exclusive routes. Keep individual `references/` under single-read tool limits (`< 40 KB`), load only step-relevant resources to guard against lost-in-the-middle attention drop-off, and anchor critical invariants and verification near the top or bottom of the active instruction rather than burying them behind long worked examples or inactive routes.
+- Include a useful happy path, required preconditions, verification, and only the failure branches the task needs.
+
+## Mode 2: Update / Distillation
+
+- Preserve the asset's name, location, supported metadata, existing authorization boundaries, and unrelated behavior unless the request changes them.
+- Apply focused edits for explicit requirements; for diagnostic feedback or open-ended defect reports, present the cause $\rightarrow$ remedy diagnosis and get scope confirmation before mutating files.
+- **Strict single-file mutation per instruction:** Edit ONLY the identified SSOT file. Never add shortened versions, summaries, or reminder notes into caller files or entrypoints while citing the source.
+- Prefer in-file density in the canonical owner over premature auxiliary file proliferation. Remove superseded rules and inline changelogs instead of leaving historical tombstones. Use [session distillation](references/session-distillation.md) when feedback needs interpretation.
+- Update callers only when changing paths, commands, or invocation contracts—never to summarize or restate the underlying rules.
+- If processing a replacement or improvement audit, preserve retained instructions, target paths, and approved decisions. Prepare concrete diffs for unapproved changes.
+
+## Mode 3: Review
+
+- Read the requested assets and their relevant resources. Assess them using the [review rubric](references/review-rubric.md) (including domain standards benchmarking).
+- Distinguish reproducible defects, evidence-based risks, and optional improvements. A stylistic preference is not a platform requirement.
+- Return a proportionate findings report. Apply repairs only when the user's request includes them; a comparison or audit alone does not authorize edits.

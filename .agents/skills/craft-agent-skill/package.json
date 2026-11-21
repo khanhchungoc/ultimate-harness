@@ -1,0 +1,40 @@
+{
+  "name": "craft-agent-skill",
+  "version": "1.0.0",
+  "description": "Universal AI skill that teaches AI coding assistants to build, refine, and audit custom agents and skills.",
+  "type": "module",
+  "bin": {
+    "craft-agent-skill": "./bin/install.js"
+  },
+  "scripts": {
+    "version": "node scripts/bump-version.js --sync-from-package && git add SKILL.md",
+    "version:minor": "node scripts/bump-version.js minor",
+    "version:major": "node scripts/bump-version.js major"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/khanhchungoc/craft-agent-skill.git"
+  },
+  "keywords": [
+    "agent",
+    "skill",
+    "copilot",
+    "claude",
+    "claude-code",
+    "codex",
+    "gemini",
+    "antigravity",
+    "kiro"
+  ],
+  "author": "Khanh Chu Ngoc",
+  "license": "MIT",
+  "files": [
+    "bin",
+    "assets",
+    "references",
+    "scripts",
+    "SKILL.md",
+    "README.md"
+  ]
+}
+
