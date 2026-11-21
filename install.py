@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-SKILLS_DIR = ROOT / "skills"
+SKILLS_DIR = ROOT / ".agents" / "skills"
 AGENTS_FILE = ROOT / "AGENTS.md"
 RUNTIMES = ("antigravity", "claude", "codex", "gemini", "kiro")
 
