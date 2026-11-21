@@ -5,7 +5,7 @@ Shared agent harness: global rules, reusable skills, and MCP templates installed
 ## Structure
 
 - `AGENTS.md` — global instructions (CodeGraph usage, always-on modes, exceptions, general coding principles)
-- `skills/` — shared skills (`caveman`, `motion`, `ponytail`, `ultracave`)
+- `.agents/skills/` — shared skills (`caveman`, `motion`, `ponytail`, `ultracave`)
 - `mcp/` — reference MCP / hook configs (`mcp.json`, `codex.toml`, `claude-settings.json`)
 - `install.py` — Python 3.9+ stdlib installer for Antigravity, Claude Code, Codex, Gemini CLI, and Kiro
 
