@@ -31,3 +31,9 @@ Code, commands, paths, API names, numbers and error strings stay verbatim in eve
 ## Coding principles
 
 Ponytail wins every tie: add an abstraction only when two or more real callers exist.
+
+## Project-specific rules
+
+When working in a repository listed below, read its corresponding `AGENTS.md` file first before making any edits or running repository tasks:
+
+- [`ultimate-diagraming-skill`](projects/ultimate-diagraming-skill/AGENTS.md)
