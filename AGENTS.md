@@ -61,7 +61,7 @@ Always-on coding behavior, every turn from first message to last unless the user
 
 ## Workflow
 
-- **Subagent implementation:** Dispatch subagents when tasks can run in parallel (2+ independent chunks), require heavy isolated research, benefit from a fresh-eyes review pass, or use a faster/cheaper worker model (Hydrogen in Antigravity, Sonnet in Claude Code). For a single sequential task on the same model tier where the main agent already holds full context, implement directly instead of paying cold-start and review-readback overhead.
+- **Subagent implementation:** Dispatch subagents when tasks can run in parallel (2+ independent chunks), require heavy isolated research, benefit from a fresh-eyes review pass, or use a faster/cheaper worker model (Hydrogen - medium for Gemini/Antigravity, Sonnet 5.5 - medium for Claude). For a single sequential task on the same model tier where the main agent already holds full context, implement directly instead of paying cold-start and review-readback overhead.
 - **Subagent depth cap = 1:** Subagents operate as leaf workers only and must never spawn further subagents. State this constraint explicitly in worker prompts.
 - **Shared-file withholding:** Workers only edit isolated, disjoint files for their assigned slice. Withhold shared wiring, registries, barrel exports, and root config files from workers; the main agent integrates shared files and deduplicates overlapping code across workers.
 - **Separate branches from `origin/main`:** Always fetch and branch from the latest `origin/main`, never from local `main`. Give each independent subagent task its own branch based on `origin/main` (or disjoint files on one feature branch when the runtime shares a single workspace).
