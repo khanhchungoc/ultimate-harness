@@ -61,8 +61,8 @@ Always-on coding behavior, every turn from first message to last unless the user
 
 ## Workflow
 
-- **Subagent implementation:** For medium to large tasks, always dispatch subagents to implement the work — use Hydrogen in Antigravity and Sonnet in Claude Code. For multiple small tasks, check whether they can be grouped and implemented by subagents in parallel for speed.
-- **Separate branches from `origin/main`:** Always fetch and branch from the latest `origin/main`, never from local `main`. Each subagent's work must be done in its own separate branch based on `origin/main`.
+- **Subagent implementation:** Dispatch subagents when tasks can run in parallel (2+ independent chunks), require heavy isolated research, benefit from a fresh-eyes review pass, or use a faster/cheaper worker model (Hydrogen in Antigravity, Sonnet in Claude Code). For a single sequential task on the same model tier where the main agent already holds full context, implement directly instead of paying cold-start and review-readback overhead.
+- **Separate branches from `origin/main`:** Always fetch and branch from the latest `origin/main`, never from local `main`. Give each independent subagent task its own branch based on `origin/main` (or disjoint files on one feature branch when the runtime shares a single workspace).
 - **Review subagent work:** Once subagent work is done, the main agent must review all code changes against the scope of work.
 - **Test ownership:** Once all subagents finish their code changes, the main agent decides whether tests run in the subagents or in the main agent, depending on whether the tasks touch related features.
 - **PR and merge confirmation:** Once the task is complete and there are no open questions for the user, open a pull request to `origin/main`, resolve any merge conflicts, and ask the user to confirm before merging into `main`.
