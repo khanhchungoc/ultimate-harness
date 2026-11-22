@@ -78,6 +78,7 @@ Load only the skills matching the touched slice (repo-specific rules always over
 | Backend, data, mobile, web logic, or tests | `engineering-standards` |
 | Auth, secrets, untrusted input, or security review | `security-review` |
 | UI components, styling, or screens in an existing codebase | `engineering-standards` + `ui-styling` |
+| HTML/CSS, native browser APIs, or Core Web Vitals | Add `modern-web-guidance` |
 | Animations, transitions, or touch gestures | Add `motion` |
 | Creating or overhauling a token architecture / design system | `design-system` (ad-hoc) |
 | New visual direction, UX redesign, or brand/visual assets | `ui-ux-pro-max`, `design`, `brand`, `slides`, or `banner-design` (ad-hoc) |
