@@ -12,6 +12,7 @@ Produces a severity-ranked security review report (`Critical` through `Info`) wi
 - **Never** run active probes, fuzzers, or dynamic scanners against production systems, real customer accounts/data, or any third-party or unapproved host.
 - **Localhost-only default for active checks:** Active HTTP/API verification is allowed by default **only** against `localhost`, `127.0.0.1`, `::1`, or local container networks. Any remote staging or QA URL requires explicit written user confirmation of (1) the exact base URL, (2) dedicated non-production test accounts, and (3) non-destructive vs. invasive scope **before** sending a single request.
 - **Never print raw secret values** in findings, evidence snippets, or command output; always redact matched credentials (for example, `AKIA****...****` or `[REDACTED len=32]`).
+- **Treat real leaked keys/credentials as compromised:** Whenever a real (non-placeholder) API key, token, password, or private key is found in code, config, logs, client bundles, responses, or git history, classify it as `Critical` and require **immediate revocation and rotation**—removing it from code alone is never sufficient.
 
 ## Mode Routing
 

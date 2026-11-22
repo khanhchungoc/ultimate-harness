@@ -39,6 +39,18 @@ Skip this section if the project does not call LLM APIs or run agent/RAG workflo
 - **Untrusted tool invocation / excessive agency:** Model output allowed to trigger state-changing tools (DB writes, SQL execution, file writes, outbound HTTP, email/payments) without strict parameter validation, allowlists, least-privilege credentials, or human confirmation for high-impact actions.
 - **System-prompt & secret/PII leakage:** API keys, internal credentials, or cross-tenant RAG documents injected into prompt context without tenant filtering, or model outputs rendered as raw HTML/Markdown without sanitization.
 
+## API Keys & Credential Leak Checklist
+
+Explicitly audit every path where API keys, tokens, passwords, or private keys commonly leak:
+
+1. **Hardcoded secrets in code, config, IaC, and CI:** Check source files, Dockerfiles, Terraform/Bicep/Helm charts, GitHub Actions workflows, and database/broker connection URLs (`postgres://user:<password>@host`, Azure `AccountKey`/`SharedAccessKey`, cloud/AI provider keys).
+2. **Committed secret files and `.gitignore` gaps:** Flag tracked `.env`, `.env.local`, `.env.production`, `*.pem`, `*.key`, `*.p12`/`*.pfx`, SSH keys, or cloud service-account JSON files (only sanitized `.env.example` templates belong in git). Verify `.gitignore` excludes `.env*` and private key files.
+3. **Client-side and mobile bundle exposure:** Flag private keys, service-role keys, or secret tokens exposed through public frontend build prefixes (`NEXT_PUBLIC_*`, `VITE_*`, `REACT_APP_*`, `NUXT_PUBLIC_*`, `PUBLIC_*`), hardcoded into mobile binaries, or leaked via publicly served source maps.
+4. **URLs and query-string leaks:** Never pass API keys, bearer tokens, or session IDs in query strings (`?api_key=`, `?token=`), which leak into browser history, `Referer` headers, proxy/access logs, and analytics tools.
+5. **Logs, errors, telemetry, and crash reports:** Verify structured loggers, exception handlers, and APM/crash reporters redact `Authorization`, `Cookie`, `x-api-key`, `set-cookie`, full DB connection strings, and `process.env` dumps.
+6. **Git history and build artifacts:** Deleting a key in a later commit does not erase it. Run `gitleaks detect --source <path> --redact` (including git history) when available, and inspect container layers or CI artifacts for baked-in secrets.
+7. **Mandatory remediation:** For any real leaked credential, instruct **immediate revocation and rotation** at the provider before or alongside removing it from the repo and history.
+
 ## Scanner Reference Table
 
 `scripts/run_passive_checks.py` always runs built-in static checks and auto-detects the optional external scanners below (reporting `ran`, `skipped`, `unavailable`, `timeout`, or `error`):

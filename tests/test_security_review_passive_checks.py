@@ -243,6 +243,67 @@ class TestSecurityReviewPassiveChecks(unittest.TestCase):
                 self.assertEqual(scanners[name]["status"], "skipped")
                 self.assertIn("--skip-external", scanners[name]["reason"])
 
+    def test_detects_cloud_ai_db_and_public_frontend_leaks_with_redaction(self) -> None:
+        google_key = "AIza" + "SyA1B2C3D4E5F6G7H8I9J0K1L2M3N4O5P6Q"
+        openai_key = "sk-proj-" + "AbCdEfGhIjKlMnOpQrStUvWxYz012345"
+        anthropic_key = "sk-ant-api03-" + "ZyXwVuTsRqPoNmLkJiHgFeDcBa987654"
+        azure_key = "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXoxMjM0NTY="
+        db_pass = "SuperSecretDbPass99!"
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "cloud.py").write_text(
+                f'GOOGLE_KEY = "{google_key}"\n'
+                f'OPENAI_KEY = "{openai_key}"\n'
+                f'ANTHROPIC_KEY = "{anthropic_key}"\n'
+                f'AZURE_CONN = "DefaultEndpointsProtocol=https;AccountName=demo;AccountKey={azure_key}"\n'
+                f'DATABASE_URL = "postgresql://admin:{db_pass}@db.internal:5432/app"\n',
+                encoding="utf-8",
+            )
+            (root / "client.ts").write_text(
+                "const key = process.env.NEXT_PUBLIC_OPENAI_API_KEY;\n"
+                "const ok = process.env.NEXT_PUBLIC_APP_URL;\n",
+                encoding="utf-8",
+            )
+            (root / "safe_db.py").write_text(
+                'LOCAL_URL = "postgresql://dev:changeme@localhost:5432/dev"\n',
+                encoding="utf-8",
+            )
+
+            proc = run_cli("--target", str(root), "--skip-external", "--format", "json")
+            self.assertEqual(proc.returncode, 1, msg=proc.stderr)
+            combined = proc.stdout + proc.stderr
+            for raw_secret in (google_key, openai_key, anthropic_key, azure_key, db_pass):
+                self.assertNotIn(raw_secret, combined)
+
+            payload = json.loads(proc.stdout)
+            rules = {item["rule_id"] for item in payload["findings"]}
+            files = {item["file"] for item in payload["findings"]}
+            self.assertIn("secret-google-api-key", rules)
+            self.assertIn("secret-openai-api-key", rules)
+            self.assertIn("secret-anthropic-api-key", rules)
+            self.assertIn("secret-azure-connection-key", rules)
+            self.assertIn("secret-db-connection-url", rules)
+            self.assertIn("secret-public-frontend-env", rules)
+            self.assertIn("client.ts", files)
+            self.assertNotIn("safe_db.py", files)
+
+    def test_flags_sensitive_files_but_allows_env_templates(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".env").write_text("PORT=3000\n", encoding="utf-8")
+            (root / "cert.p12").write_bytes(b"\x00\x01binarykeystore")
+            (root / ".env.example").write_text("API_KEY=your_api_key_here\n", encoding="utf-8")
+            (root / ".env.template").write_text("SECRET_KEY=changeme\n", encoding="utf-8")
+
+            proc = run_cli("--target", str(root), "--skip-external", "--format", "json")
+            self.assertEqual(proc.returncode, 1, msg=proc.stderr)
+            payload = json.loads(proc.stdout)
+            flagged_files = {
+                item["file"] for item in payload["findings"] if item["rule_id"] == "secret-sensitive-file"
+            }
+            self.assertEqual(flagged_files, {".env", "cert.p12"})
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -132,6 +132,34 @@ SECRET_RULES: tuple[tuple[str, str, str, re.Pattern[str], str], ...] = (
         "prefix",
     ),
     (
+        "secret-google-api-key",
+        "Critical",
+        "Hardcoded Google/Gemini API key detected.",
+        re.compile(r"\b(AIza[0-9A-Za-z_-]{35})\b"),
+        "prefix",
+    ),
+    (
+        "secret-openai-api-key",
+        "Critical",
+        "Hardcoded OpenAI API key detected.",
+        re.compile(r"\b(sk-proj-[A-Za-z0-9_-]{20,}|sk-[A-Za-z0-9]{20,}T3BlbkFJ[A-Za-z0-9]{20,})\b"),
+        "prefix",
+    ),
+    (
+        "secret-anthropic-api-key",
+        "Critical",
+        "Hardcoded Anthropic API key detected.",
+        re.compile(r"\b(sk-ant-api[0-9]{2}-[A-Za-z0-9_-]{20,})\b"),
+        "prefix",
+    ),
+    (
+        "secret-azure-connection-key",
+        "Critical",
+        "Hardcoded Azure AccountKey or SharedAccessKey detected.",
+        re.compile(r"\b(?:AccountKey|SharedAccessKey)\s*=\s*([A-Za-z0-9+/=]{24,})"),
+        "generic",
+    ),
+    (
         "secret-private-key",
         "Critical",
         "Private key block header detected in source/config.",
@@ -143,6 +171,23 @@ SECRET_RULES: tuple[tuple[str, str, str, re.Pattern[str], str], ...] = (
 GENERIC_SECRET_RE = re.compile(
     r"""(?i)\b(?:[a-z0-9_]*?(?:secret|api[_-]?key|access[_-]?token|auth[_-]?token|private[_-]?key|client[_-]?secret|password|passwd))\b\s*[:=]\s*(['"])([^'"\r\n]{8,})\1"""
 )
+
+DB_CRED_URL_RE = re.compile(
+    r"""\b(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|redis|rediss|amqp|amqps|mssql)://[^:/@\s]+:([^@\s'"]{4,})@"""
+)
+
+PUBLIC_ENV_SECRET_RE = re.compile(
+    r"""\b((?:NEXT_PUBLIC|VITE|REACT_APP|NUXT_PUBLIC|PUBLIC)_[A-Z0-9_]*(?:SECRET|PRIVATE_KEY|SERVICE_ROLE|API_KEY|ACCESS_TOKEN|PASSWORD))\b"""
+)
+
+SAFE_ENV_TEMPLATE_NAMES = frozenset({
+    ".env.example",
+    ".env.sample",
+    ".env.template",
+    ".env.dist",
+})
+SENSITIVE_FILENAMES = frozenset({"id_rsa", "id_ed25519", "id_dsa", "id_ecdsa"})
+SENSITIVE_EXTENSIONS = frozenset({".pem", ".key", ".p12", ".pfx"})
 
 TLS_DISABLE_RE = re.compile(
     r"""(\bverify\s*=\s*False\b|\brejectUnauthorized\s*:\s*false\b|\bInsecureSkipVerify\s*:\s*true\b|\bNODE_TLS_REJECT_UNAUTHORIZED\s*[:=]\s*['"]?0['"]?)"""
@@ -221,10 +266,23 @@ def normalize_relpath(path: Path, base: Path) -> str:
         return path.as_posix()
 
 
+def is_sensitive_filename(path: Path) -> bool:
+    name_lower = path.name.lower()
+    if name_lower in SAFE_ENV_TEMPLATE_NAMES:
+        return False
+    if name_lower == ".env" or name_lower.startswith(".env."):
+        return True
+    if name_lower in SENSITIVE_FILENAMES:
+        return True
+    if path.suffix.lower() in SENSITIVE_EXTENSIONS:
+        return True
+    return False
+
+
 def iter_target_files(
     target: Path, max_file_bytes: int
-) -> tuple[list[tuple[Path, str]], int, int]:
-    """Yield readable UTF-8 non-binary files within size bounds."""
+) -> tuple[list[tuple[Path, str]], list[Path], int, int]:
+    """Yield readable UTF-8 non-binary files within size bounds, plus sensitive filenames."""
     candidates: list[Path] = []
     if target.is_file():
         candidates.append(target)
@@ -235,6 +293,7 @@ def iter_target_files(
                 candidates.append(Path(dirpath) / fname)
 
     readable: list[tuple[Path, str]] = []
+    sensitive_paths: list[Path] = []
     skipped_size = 0
     skipped_binary = 0
     for fpath in candidates:
@@ -244,6 +303,8 @@ def iter_target_files(
             size = fpath.stat().st_size
         except OSError:
             continue
+        if is_sensitive_filename(fpath):
+            sensitive_paths.append(fpath)
         if size > max_file_bytes:
             skipped_size += 1
             continue
@@ -260,14 +321,28 @@ def iter_target_files(
             skipped_binary += 1
             continue
         readable.append((fpath, text))
-    return readable, skipped_size, skipped_binary
+    return readable, sensitive_paths, skipped_size, skipped_binary
 
 
 def scan_builtin(target: Path, max_file_kb: int) -> tuple[list[Finding], dict[str, int]]:
     base = target.parent if target.is_file() else target
     max_file_bytes = max_file_kb * 1024
-    files, skipped_size, skipped_binary = iter_target_files(target, max_file_bytes)
+    files, sensitive_paths, skipped_size, skipped_binary = iter_target_files(target, max_file_bytes)
     findings: list[Finding] = []
+
+    for spath in sensitive_paths:
+        rel = normalize_relpath(spath, base)
+        findings.append(
+            Finding(
+                scanner="builtin-static",
+                rule_id="secret-sensitive-file",
+                severity="High",
+                file=rel,
+                line=0,
+                message="Sensitive secret/environment/key file present in target tree; verify it is gitignored and never committed.",
+                evidence=spath.name,
+            )
+        )
 
     for fpath, content in files:
         rel = normalize_relpath(fpath, base)
@@ -293,6 +368,23 @@ def scan_builtin(target: Path, max_file_kb: int) -> tuple[list[Finding], dict[st
                         )
                     )
 
+            for match in DB_CRED_URL_RE.finditer(line):
+                password_val = match.group(1)
+                if is_placeholder_value(password_val):
+                    continue
+                matched_specific_secret = True
+                findings.append(
+                    Finding(
+                        scanner="builtin-static",
+                        rule_id="secret-db-connection-url",
+                        severity="Critical",
+                        file=rel,
+                        line=lineno,
+                        message="Database or broker connection URL with embedded password detected.",
+                        evidence=redact_secret(password_val, "generic"),
+                    )
+                )
+
             if not matched_specific_secret:
                 for match in GENERIC_SECRET_RE.finditer(line):
                     literal = match.group(2)
@@ -312,6 +404,20 @@ def scan_builtin(target: Path, max_file_kb: int) -> tuple[list[Finding], dict[st
 
             if is_prose or is_comment_only(line):
                 continue
+
+            pub_env_match = PUBLIC_ENV_SECRET_RE.search(line)
+            if pub_env_match:
+                findings.append(
+                    Finding(
+                        scanner="builtin-static",
+                        rule_id="secret-public-frontend-env",
+                        severity="High",
+                        file=rel,
+                        line=lineno,
+                        message="Public client-bundle env var name appears to expose a secret or API key to browsers.",
+                        evidence=pub_env_match.group(1),
+                    )
+                )
 
             tls_match = TLS_DISABLE_RE.search(line)
             if tls_match:

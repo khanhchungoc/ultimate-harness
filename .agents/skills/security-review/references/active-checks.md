@@ -63,6 +63,12 @@ Run focused, low-volume HTTP requests (for example via `curl -sS -i` or a short 
   - **Reflected XSS marker:** Submit a benign marker containing HTML metacharacters (such as `sec_probe_"'><`) and verify output is properly HTML-encoded (`&lt;`, `&gt;`, `&quot;`) or returned as `application/json` with `X-Content-Type-Options: nosniff`.
   - **SQL/template marker:** Submit a single quote `'` or `{{7*7}}` to a search/filter field and verify clean handling (no SQL syntax error, no `49` template evaluation).
 
+### 8. Credential, API Key & Sensitive File Exposure (`A02:2025`, `A04:2025`)
+- Probe common accidentally exposed paths on the approved target: `/.env`, `/.git/config`, `/config.json`, `/debug`, `/actuator/env`, `/metrics`, and API docs endpoints.
+- Inspect API responses, HTML pages, client JS bundles, error bodies, and redirect `Location` headers for accidentally echoed secrets (provider API keys, DB connection strings, `Authorization`/`x-api-key` headers, or tokens in query strings).
+- **Pass:** Sensitive files return `404`/`403`, and zero secrets, connection strings, or auth headers appear in responses, client bundles, or redirect URLs.
+- **Fail:** Any exposed secret file, env dump, or echoed credential (always redact the value in the report and flag immediate rotation).
+
 ## Tier 2 — Optional DAST Scanners (OWASP ZAP / Nuclei)
 
 Use Tier 2 only when the tool is installed, Tier 1 is complete, and the scope is explicitly authorized (localhost or written staging sign-off).
