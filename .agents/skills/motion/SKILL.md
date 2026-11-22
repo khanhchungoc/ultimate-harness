@@ -9,7 +9,7 @@ argument-hint: "[subcommand or question, e.g. 'make accordion', 'insert', 'fix a
 
 Animation for the web, done properly.
 
--   [Animation best practices](best-practices/index.md): "Animate this button", "Fade this layer in", "Animate this Vue component". Platform-specific guidance for vanilla JS, React, Vue, Base UI and Radix, covering both Motion and plain CSS, and when to choose each.
+-   [Animation best practices](best-practices/index.md): "Animate this button", "Fade this layer in", "Animate this Vue component". Platform-specific guidance for vanilla JS, React, Vue, Base UI and Radix, covering both Motion and plain CSS, when to choose each, and mobile gesture performance tracing.
 -   [Insert panel](insert/index.md): "/motion make accordion", "/motion insert", "/motion add", "Build a carousel", "Add a pricing section / hero". Opens Motion's library for the user to pick from. Prefer the Motion+ server's panel when it is connected.
 -   [Documentation, examples and Motion UI search](codex/index.md): "What options does X have", "How does X work", "Use X to do Y", "Show me an example of X".
 -   [CSS spring and bounce generation](css-spring/index.md): "Generate a CSS spring with a bounce of 0.5 over 0.3s", "Make this bouncier", "Give me a bounce easing".

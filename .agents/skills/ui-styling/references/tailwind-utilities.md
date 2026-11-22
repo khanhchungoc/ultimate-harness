@@ -388,26 +388,15 @@ Directions: `to-t | to-tr | to-r | to-br | to-b | to-bl | to-l | to-tl`
 
 ## Arbitrary Values
 
-Use square brackets for custom values:
+Reserve square-bracket syntax for CSS token expressions (such as `var(--...)`) or one-off structural layout constraints (like custom grid templates). Avoid arbitrary magic colors, font sizes, or spacing (`bg-[#...]`, `text-[22px]`, `p-[17px]`); define semantic tokens in `@theme` or `tailwind.config` instead.
 
 ```html
-<!-- Spacing -->
-<div class="p-[17px]">Custom padding</div>
-<div class="top-[117px]">Custom position</div>
-
-<!-- Colors -->
-<div class="bg-[#bada55]">Hex color</div>
-<div class="text-[rgb(123,45,67)]">RGB</div>
-
-<!-- Sizes -->
-<div class="w-[500px]">Custom width</div>
-<div class="text-[22px]">Custom font size</div>
-
-<!-- CSS variables -->
+<!-- CSS variables / tokens (preferred) -->
 <div class="bg-[var(--brand-color)]">CSS var</div>
 
-<!-- Complex values -->
+<!-- One-off structural layout constraints -->
 <div class="grid-cols-[1fr_500px_2fr]">Custom grid</div>
+<div class="w-[min(100%,480px)]">Constrained viewport</div>
 ```
 
 ## Aspect Ratio

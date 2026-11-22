@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "mcp__codegraph__*"
+      "mcp__codegraph__*",
+      "mcp__chrome-devtools__*",
+      "mcp__motion__*"
     ]
   },
   "hooks": {

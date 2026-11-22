@@ -17,7 +17,7 @@
 
 #### Properties
 
-Prefer transforms (`transform` or independent transforms like `x`, `y`, `scale`, `rotate`), `opacity`, `clipPath` and `filter` where possible as these are hardware accelerated. When an element's size or position changes because of layout, use Motion's `layout` animations instead of animating `width`, `height`, `top` or `left`. 
+Prefer transforms (`transform` or independent transforms like `x`, `y`, `scale`, `rotate`), `opacity`, `clipPath` and `filter` where possible as these are hardware accelerated. For continuous touch drags on multi-element containers, stick strictly to compositor-only `transform` and `opacity` (per-frame `filter` or CSS `mask-image` updates can trigger repaint/compositor thrash). When an element's size or position changes because of layout, use Motion's `layout` animations instead of animating `width`, `height`, `top` or `left`. 
 
 #### Execution speed
 
@@ -68,6 +68,15 @@ Accelerated animations are de-optimised to the main thread when they use `onUpda
 When animating transforms, `opacity`, `clipPath` or `filter`, and it will de-opt according to rules above, set `will-change` on the animating properties so the browser promotes the element to its own compositor layer. Use it sparingly and remove it once the animation finishes.
 
 When animating with CSS `animation` or a hardware-accelerated Motion animation (`transform`, `x`, `scale` etc), this is unnecessary — the layer is promoted automatically by the browser.
+
+#### Mobile gesture performance trace check
+
+Whenever creating or modifying interactive gestures or continuous animations (drawer pulls, swipe-back/dismiss, drag sheets, canvas pan/zoom), verify runtime performance before finishing:
+
+1.  **Mid-tier mobile emulation:** Emulate mobile hardware via `chrome-devtools` MCP (e.g. `390x844` viewport, `deviceScaleFactor: 3`, mobile touch enabled) with `cpuThrottlingRate: 4` (4x CPU throttle).
+2.  **Record a continuous drag trace:** Run `performance_start_trace`, execute a continuous 30-45 frame simulated touch drag/gesture, then run `performance_stop_trace`.
+3.  **Zero forced reflows:** Inspect trace insights (`ForcedReflow`). Forced reflow duration inside move and pointer-release handlers must be **0 ms**. Never read layout geometry (`getComputedStyle()`, `getBoundingClientRect()`, `offsetWidth`/`offsetHeight`) inside gesture move/release loops when tracked pointer coordinates already provide geometry.
+4.  **Compositor-only updates:** Restrict per-frame gesture updates to compositor-only `transform` and `opacity`; never mutate `filter` or CSS `mask-image` per frame on multi-element containers, and confirm zero layout thrash or subpixel jitter in the trace.
 
 ### Design
 

@@ -8,6 +8,18 @@
         "--mcp"
       ],
       "alwaysLoad": true
+    },
+    "chrome-devtools": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "chrome-devtools-mcp@latest"
+      ]
+    },
+    "motion": {
+      "type": "http",
+      "url": "https://mcp.motion.dev"
     }
   }
 }
