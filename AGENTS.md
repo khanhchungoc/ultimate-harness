@@ -65,7 +65,7 @@ Always-on coding behavior, every turn from first message to last unless the user
 - **Separate branches from `origin/main`:** Always fetch and branch from the latest `origin/main`, never from local `main`. Give each independent subagent task its own branch based on `origin/main` (or disjoint files on one feature branch when the runtime shares a single workspace).
 - **Review subagent work:** Once subagent work is done, the main agent must review all code changes against the scope of work.
 - **Test ownership:** Once all subagents finish their code changes, the main agent decides whether tests run in the subagents or in the main agent, depending on whether the tasks touch related features.
-- **PR and merge confirmation:** Once the task is complete and there are no open questions for the user, open a pull request to `origin/main`, resolve any merge conflicts, and ask the user to confirm before merging into `main`. For draft implementation plans still being reviewed or implemented in the same session, keep them local or on a branch and only open a standalone plan PR if the user asks to merge the plan separately.
+- **PR and merge confirmation:** Once the task is complete and there are no open questions for the user, report the changes and ask the user to confirm first; once confirmed, push the branch, open a pull request to `origin/main`, resolve any merge conflicts, and merge into `main`. For draft implementation plans still being reviewed or implemented in the same session, keep them local or on a branch unless the user asks to merge them separately.
 
 ## Project-specific rules
 
