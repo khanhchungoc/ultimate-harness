@@ -12,16 +12,6 @@ metadata:
 
 Token architecture, component specifications, systematic design, slide generation.
 
-## When to Use
-
-- Design token creation
-- Component state definitions
-- CSS variable systems
-- Spacing/typography scales
-- Design-to-code handoff
-- Tailwind theme configuration
-- **Slide/presentation generation**
-
 ## Token Architecture
 
 Load: `references/token-architecture.md`
@@ -236,9 +226,8 @@ assets/designs/slides/claudekit-pitch-251223.html
 
 ## Best Practices
 
-1. Never use raw hex in components - always reference tokens
-2. Semantic layer enables theme switching (light/dark)
-3. Component tokens enable per-component customization
-4. Use HSL format for opacity control
-5. Document every token's purpose
-6. **Slides must import design-tokens.css and use var() exclusively**
+1. Semantic layer enables theme switching (light/dark)
+2. Component tokens enable per-component customization
+3. Use HSL format for opacity control
+4. Document every token's purpose
+5. **Slides must import design-tokens.css and use var() exclusively**

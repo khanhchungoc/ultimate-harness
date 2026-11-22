@@ -17,18 +17,15 @@ Comprehensive skill for creating beautiful, accessible user interfaces combining
 - shadcn/ui: https://ui.shadcn.com/llms.txt
 - Tailwind CSS: https://tailwindcss.com/docs
 
-## When to Use This Skill
+## Component Architecture & Reuse
 
-Use when:
-- Building UI with React-based frameworks (Next.js, Vite, Remix, Astro)
-- Implementing accessible components (dialogs, forms, tables, navigation)
-- Styling with utility-first CSS approach
-- Creating responsive, mobile-first layouts
-- Implementing dark mode and theme customization
-- Building design systems with consistent tokens
-- Generating visual designs, posters, or brand materials
-- Rapid prototyping with immediate visual feedback
-- Adding complex UI patterns (data tables, charts, command palettes)
+- **Reuse-first check:** Before installing or authoring a new UI component, inspect the project's existing shared component library (e.g., `components/ui/`, `shared/ui/`, or design-system primitives) and reuse or compose existing primitives instead of creating duplicate wrappers.
+- **Design token discipline (no hardcoded magic values):** Consume the project's semantic or component design tokens (CSS variables or Tailwind theme tokens) for all colors, typography (font families, sizes, weights, line-heights), spacing, radii, shadows, and durations. Never scatter raw hex/RGB colors, arbitrary Tailwind magic values (`text-[13px]`, `leading-[18px]`, `p-[17px]`, `bg-[#...]`), or raw CSS `font-family`/`font-weight`/dimension overrides across feature code. When a needed value is missing from the scale, define or extend a semantic token in the theme layer instead of bypassing the system.
+- **Layered / atomic composition:** Organize UI components in clear layers with strictly upward dependencies:
+  1. **Primitives / Atoms** (buttons, inputs, badges, icons): domain-agnostic, stateless or controlled, reusable across features.
+  2. **Molecules** (form fields, search bars, list rows): small compositions of primitives with cohesive local UI behavior.
+  3. **Organisms / Feature Views** (navigation shells, data tables, panels, pages): compose primitives and molecules with domain data.
+- **Feature boundaries (guarded DRY):** Keep feature-specific components inside their feature directory and avoid importing across sibling features. Promote a component to the shared UI layer only once it has genuine cross-feature reuse.
 
 ## Core Stack
 
@@ -162,7 +159,7 @@ Covers:
 - Typography (font sizes, weights, alignment, line height)
 - Colors and backgrounds
 - Borders and shadows
-- Arbitrary values for custom styling
+- Token-backed and structural arbitrary values
 
 ## Responsive Design
 
@@ -226,16 +223,14 @@ python scripts/tailwind_config_gen.py --colors brand:blue --fonts display:Inter
 
 ## Best Practices
 
-1. **Component Composition**: Build complex UIs from simple, composable primitives
-2. **Utility-First Styling**: Use Tailwind classes directly; extract components only for true repetition
-3. **Mobile-First Responsive**: Start with mobile styles, layer responsive variants
-4. **Accessibility-First**: Leverage Radix UI primitives, add focus states, use semantic HTML
-5. **Design Tokens**: Use consistent spacing scale, color palettes, typography system
-6. **Dark Mode Consistency**: Apply dark variants to all themed elements
-7. **Performance**: Leverage automatic CSS purging, avoid dynamic class names
-8. **TypeScript**: Use full type safety for better DX
-9. **Visual Hierarchy**: Let composition guide attention, use spacing and color intentionally
-10. **Expert Craftsmanship**: Every detail matters - treat UI as a craft
+1. **Utility-First Styling**: Use Tailwind classes directly; extract components only for true repetition
+2. **Mobile-First Responsive**: Start with mobile styles, layer responsive variants
+3. **Accessibility-First**: Leverage Radix UI primitives, add focus states, use semantic HTML
+4. **Dark Mode Consistency**: Apply dark variants to all themed elements
+5. **Performance**: Leverage automatic CSS purging, avoid dynamic class names
+6. **TypeScript**: Use full type safety for better DX
+7. **Visual Hierarchy**: Let composition guide attention, use spacing and color intentionally
+8. **Expert Craftsmanship**: Every detail matters - treat UI as a craft
 
 ## Reference Navigation
 

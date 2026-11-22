@@ -31,6 +31,15 @@ Load when designing, implementing, reviewing, or refactoring web frontend logic,
 - **Prevent double submission.** Disable or guard async submit buttons and form handlers while a mutation is in flight, and prevent Enter-key resubmission during processing.
 - **Survive real-world content.** Test how components behave with very long unbroken strings (URLs, emails, German/Vietnamese labels), zero items, and hundreds of items—prevent horizontal overflow or clipping of primary buttons.
 
+## Live Browser Verification (UI vs. Headless Split)
+
+- **UI and interactive changes (require live browser verification):** When modifying rendered UI, layout, navigation, focus/keyboard flows, gestures, or client-side persistence/recovery, verify against a running dev server with live browser tooling (such as `chrome-devtools` MCP):
+  - **Zero console/runtime errors:** Confirm no uncaught console errors, unhandled promise rejections, or framework/hydration warnings on load and during interaction.
+  - **Touch and hit targets:** Audit interactive controls for accessible sizing (`>= 44x44px` on touch/mobile viewports; expand hit areas with padding when visual icons are smaller) and verify no horizontal overflow or clipped primary actions.
+  - **Interactive checks:** Exercise the changed flows directly (clicks, form validation, keyboard navigation/Escape/focus restoration, gestures, and reload persistence where applicable) rather than relying solely on static builds or unit tests.
+- **Headless and pure-logic changes (skip browser setup):** Pure state reducers, data mappers, schemas, utilities, API clients, and unit/contract tests do not need a dev server or browser target; verify with typechecks and automated tests instead.
+- **Unavailable browser tooling:** If live browser verification is required for a UI change and no browser MCP or local dev server can run, run all deterministic checks (typecheck, build, automated tests) and explicitly report live browser checks as unverified.
+
 ## Common Real-World Compromises
 
 Raise these trade-offs explicitly before deciding:
