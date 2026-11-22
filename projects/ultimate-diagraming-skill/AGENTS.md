@@ -12,7 +12,7 @@
 - **Contract first.** The disk format is the public API. Changing it needs a migration and a golden test (`dev/tests/unit/check_golden.py`).
 - **Deterministic.** The same input must always give the same layout and output: no randomness, no time-based values.
 - **Validate at the edge.** Check input once at the boundary and fail loudly, then trust it inside.
-- **Verify before done.** Run each slice's checker or e2e test under `dev/`, and check light and dark themes and contrast.
+- **Verify before done.** Run each slice's checker or e2e test under `dev/`, and check light and dark themes and contrast. After editing `assets/` or page-assembly scripts, rebuild and verify `dev/samples/example-*.html` with `python3 dev/tools/build_examples.py && python3 dev/tools/build_examples.py --check`.
 - **No new dependencies** without a stated reason; the skill must stay portable.
 
 ## Implementation plans
