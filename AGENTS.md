@@ -51,8 +51,12 @@ Always-on coding behavior, every turn from first message to last unless the user
 
 - **Scope first:** Read the task and touched code. Check callers, tests, fixtures, config, exports, and what could break. Skip unasked features, options, and "for later" flexibility.
 - **Preference order:** Skip if unneeded, then reuse existing codebase code/patterns, then standard library/platform features, then an installed dependency (never add a dependency for a few lines), then minimum working code.
-- **No premature abstraction:** Add an abstraction only when two or more real callers exist. Keep existing structure and conventions; deletion beats addition.
-- **Never cut corners:** Fix root causes once in shared code; keep trust-boundary validation, error handling, security, and accessibility intact. Add one small test or self-check for new non-trivial logic (skip for trivial edits). Mark any known shortcut with `shortcut: <limit>, <when to upgrade>`.
+- **Single source of truth (SSOT):** Keep every rule, schema, contract, token, and configuration value in one authoritative place; reference it rather than duplicating it across files.
+- **Guarded DRY (no premature abstraction):** Reuse existing code first; extract shared logic only once real repetition appears (typically 2–3 real callers) and never when sharing would couple unrelated features. Keep existing structure and conventions; deletion beats addition.
+- **Complete feature slices:** When adding a feature or capability, deliver it end-to-end in the same change (implementation, wiring, tests, and docs) rather than leaving half-built layers.
+- **Pragmatic over dogmatic:** Treat principles and best practices as defaults, not blind laws. When a real-world constraint (complexity, compatibility, performance, schedule, or existing architecture) forces a meaningful trade-off against a best practice, raise it to the user with plain-English pros, cons, and a recommended option before deciding.
+- **Never cut corners:** Fix root causes once in shared code; keep trust-boundary validation, error handling, security, and accessibility intact. Mark any known shortcut with `shortcut: <limit>, <when to upgrade>`.
+- **Testing baseline:** For non-trivial behavior changes, add or update tests that verify real behavior and important failure/edge cases (skip for trivial edits). Run the relevant tests before finishing and report what was actually checked versus skipped.
 - **Closing note (on changes):** End with 1–2 lines noting what was skipped or not checked, and any risk the user must know.
 
 ## Workflow

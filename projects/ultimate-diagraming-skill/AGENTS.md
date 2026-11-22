@@ -4,16 +4,15 @@
 
 ## Coding principles
 
-- **Maintainable and scalable.** Code must stay easy to maintain and must scale to every diagram type and every diagram size, from a handful of nodes to thousands. A change that works for one type or one small diagram but would break or slow down another is not done.
-- **Reuse first.** Before writing anything, search for an existing function, component, token or helper (in `assets/components`, `assets/shell`, `scripts/`) and use it. Extend an existing one instead of writing a near-duplicate. New code is the last resort.
-- **Single source of truth (SSOT).** Tokens live in `assets/tokens` and `scripts/tokens.py`, layout in `scripts/layout_engine.py`, the file format in `scripts/disk_format.py`, and the type list in `SUPPORTED_TYPES`. Never copy these into a type, a component or the playground, and never hardcode colors, sizes or fonts.
-- **DRY.** Share code across types through `assets/components` and `assets/shell`. Extract on the third copy, and not at all if sharing would couple two types together.
-- **Vertical slices.** One diagram type is one slice: its folder, `blank.json`, playground entry, example, checker or e2e test, and docs, all in the same change. Never leave a type half-built across layers.
+- **Maintainable and scalable.** Code must stay easy to maintain and scale to every diagram type and size, from a handful of nodes to thousands. A change that works for one type or small diagram but breaks or slows down another is not done.
+- **Reuse and DRY.** Search `assets/components`, `assets/shell`, and `scripts/` first, and extend an existing helper or component before adding new code. Share across diagram types through `assets/components` and `assets/shell` (extract on the third copy, never if sharing would couple two types).
+- **Single source of truth (SSOT).** Tokens live in `assets/tokens` and `scripts/tokens.py`, layout in `scripts/layout_engine.py`, the file format in `scripts/disk_format.py`, and the type list in `SUPPORTED_TYPES`. Never copy these into a type, component, or playground, and never hardcode colors, sizes, or fonts.
+- **Vertical slices.** One diagram type is one complete slice: its folder, `blank.json`, playground entry, example, checker or e2e test, and docs in the same change.
 - **SOLID, kept light.** The shell and layout engine are open for extension and closed for modification: a new type plugs in through a contract, and core code is not edited per type. Keep component APIs small. Prefer small modules and plain functions; use classes only for real state or polymorphism, not as a rule.
 - **Contract first.** The disk format is the public API. Changing it needs a migration and a golden test (`dev/tests/unit/check_golden.py`).
 - **Deterministic.** The same input must always give the same layout and output: no randomness, no time-based values.
 - **Validate at the edge.** Check input once at the boundary and fail loudly, then trust it inside.
-- **Verify before done.** Each slice has a checker or e2e test under `dev/`; run it, and check light and dark themes and contrast.
+- **Verify before done.** Run each slice's checker or e2e test under `dev/`, and check light and dark themes and contrast.
 - **No new dependencies** without a stated reason; the skill must stay portable.
 
 ## Implementation plans
