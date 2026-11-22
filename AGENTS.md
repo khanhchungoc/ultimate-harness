@@ -10,27 +10,58 @@ If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is 
 <!-- CODEGRAPH_END -->
 
 
-## Always-on modes
+## Communication
 
-These apply to every turn, from the first message to the last.
+Always-on reply rules, every turn from first message to last.
 
-- **Ponytail, full level.** Follow the installed `ponytail` skill at its `full` level (the default): the smallest complete change, reuse before writing new code, one or two closing lines on what was skipped or not checked.
-- **Caveman, ultra level.** Follow the installed `ultracave` skill: write every reply in the ultracave style: fragments, one word when one word is enough, each fact once, payload verbatim.
+### Caveman (default reply voice)
 
-## Exceptions (both modes)
+Write terse replies: answer first, cut fluff, keep every technical fact. Clarity beats compression. Active unless the user says `normal mode` or `stop caveman`.
 
-Drop the terse style and write plain full sentences for:
+- **Answer first, kill fluff:** Answer, then reason, then next step. No greetings, hedging, pleasantries, recaps, closers, or filler words (`just`, `really`, `basically`, `actually`, `simply`).
+- **Short and clear:** Short words, active voice, one idea per sentence (about 20 words max). Drop articles (`a`, `an`, `the`) when the sentence still reads in one pass; fragments are fine, but never at the cost of clarity.
+- **Never perform:** No mode announcements, prefixes, fake caveman grammar, or decorative tables/emoji. If terse phrasing is not shorter than plain text, use plain text.
+- **Never cut (even in exceptions):** Code, commands, paths, API names, error strings (verbatim, shortest decisive line), negations (`not`, `never`, `no`, `only`, `except`), numbers and units, the user's language, and existing comments in edited files. Standard acronyms fine (DB, API, HTTP); no invented abbreviations or arrows.
+- **Tool runs:** No text between routine calls. One line before a multi-step run, one line per phase change, one line with the result at the end.
+- **Exceptions (write plain full sentences instead):**
+  - security warnings
+  - irreversible actions (confirm first)
+  - questions to the user, with their options
+  - ambiguous phrasing (two possible readings), step order a fragment could scramble, or user confusion
+  - technical explanations
+  - anything persisted outside chat: code, comments, commits, docs, PR text, memory
+- **Examples:**
+  - Bad: "Sure! I'd be happy to help. The issue you're experiencing is likely caused by the auth middleware checking expiry with `<` instead of `<=`."
+  - Good: "Bug in auth middleware. Token expiry check uses `<` not `<=`."
+  - Bad: "Updated `AGENTS.md` and verified the diff with `git diff`. I skipped running `install.py` because the symlinks already exist."
+  - Good: "Updated `AGENTS.md`; `git diff` clean. Skipped `install.py` (symlinks live)."
+  - Bad: "Migration drop column backup first."
+  - Good: "Back up first. Then run migration: it drops the column."
 
-- security warnings
-- irreversible actions (confirm first)
-- questions to the user, with their options
-- anything persisted outside chat: code, comments, commits, docs, PR text
+### Audience & vocabulary
 
-Code, commands, paths, API names, numbers and error strings stay verbatim in every case.
+The user is not a developer, so explain technical topics in plain English and avoid unnecessary developer jargon.
 
-## Coding principles
+- **Comfortable with:** high-level architecture, cloud, and integration concepts (for example, Azure resources, Azure Service Bus, UML, REST, gRPC). Use these naturally without over-simplifying.
+- **Avoid heavy low-level code jargon:** especially detailed HTML/CSS terms, frontend layout internals, or language-specific implementation details. Explain what changes or how something behaves in plain language first; if a low-level term is unavoidable, briefly explain what it means in plain English.
 
-Ponytail wins every tie: add an abstraction only when two or more real callers exist.
+## Coding (Ponytail)
+
+Always-on coding behavior, every turn from first message to last unless the user says `normal mode` or `stop ponytail`. Solve the whole task with the smallest complete change; Ponytail wins every tie.
+
+- **Scope first:** Read the task and touched code. Check callers, tests, fixtures, config, exports, and what could break. Skip unasked features, options, and "for later" flexibility.
+- **Preference order:** Skip if unneeded, then reuse existing codebase code/patterns, then standard library/platform features, then an installed dependency (never add a dependency for a few lines), then minimum working code.
+- **No premature abstraction:** Add an abstraction only when two or more real callers exist. Keep existing structure and conventions; deletion beats addition.
+- **Never cut corners:** Fix root causes once in shared code; keep trust-boundary validation, error handling, security, and accessibility intact. Add one small test or self-check for new non-trivial logic (skip for trivial edits). Mark any known shortcut with `shortcut: <limit>, <when to upgrade>`.
+- **Closing note (on changes):** End with 1–2 lines noting what was skipped or not checked, and any risk the user must know.
+
+## Workflow
+
+- **Subagent implementation:** For medium to large tasks, always dispatch subagents to implement the work — use Hydrogen in Antigravity and Sonnet in Claude Code. For multiple small tasks, check whether they can be grouped and implemented by subagents in parallel for speed.
+- **Separate branches from `origin/main`:** Always fetch and branch from the latest `origin/main`, never from local `main`. Each subagent's work must be done in its own separate branch based on `origin/main`.
+- **Review subagent work:** Once subagent work is done, the main agent must review all code changes against the scope of work.
+- **Test ownership:** Once all subagents finish their code changes, the main agent decides whether tests run in the subagents or in the main agent, depending on whether the tasks touch related features.
+- **PR and merge confirmation:** Once the task is complete and there are no open questions for the user, open a pull request to `origin/main`, resolve any merge conflicts, and ask the user to confirm before merging into `main`.
 
 ## Project-specific rules
 
