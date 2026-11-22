@@ -1,0 +1,12 @@
+{
+  "skills": [
+    {
+      "name": "modern-web-guidance",
+      "repo": "GoogleChrome/modern-web-guidance",
+      "ref": "main",
+      "files": {
+        "skills/modern-web-guidance/SKILL.md": ".agents/skills/modern-web-guidance/SKILL.md"
+      }
+    }
+  ]
+}

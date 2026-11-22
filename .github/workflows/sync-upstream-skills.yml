@@ -1,0 +1,67 @@
+name: Sync Upstream Skills
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install skill validator dependency
+        run: pip install -r .agents/skills/craft-agent-skill/scripts/requirements.txt
+
+      - name: Sync upstream skills
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 sync_skills.py
+
+      - name: Validate updated skills and open PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -z "$(git status --porcelain .agents/skills)" ]; then
+            echo "All upstream skills are up to date."
+            exit 0
+          fi
+
+          changed_skills=$(git status --porcelain .agents/skills \
+            | awk '{print $NF}' \
+            | awk -F/ '{print $1"/"$2"/"$3}' \
+            | sort -u)
+
+          for skill_dir in $changed_skills; do
+            echo "Validating $skill_dir"
+            python3 .agents/skills/craft-agent-skill/scripts/validate_agent_skill.py --path "$skill_dir"
+          done
+
+          branch="chore/sync-upstream-skills"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$branch"
+          git add .agents/skills
+          git commit -m "chore: sync upstream skills"
+          git push --force-with-lease origin "$branch"
+
+          if gh pr list --head "$branch" --state open --json number --jq 'length' | grep -q '^0$'; then
+            gh pr create \
+              --base main \
+              --head "$branch" \
+              --title "chore: sync upstream skills" \
+              --body "Automated weekly sync from \`upstream-skills.json\`. Review the diff before merging."
+          else
+            echo "Updated existing PR for $branch."
+          fi
