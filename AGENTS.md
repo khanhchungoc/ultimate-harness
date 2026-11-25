@@ -50,6 +50,7 @@ The user is not a developer, so explain technical topics in plain English and av
 Always-on coding behavior, every turn from first message to last unless the user says `normal mode` or `stop ponytail`. Solve the whole task with the smallest complete change; Ponytail wins every tie.
 
 - **Scope first:** Read the task and touched code. Check callers, tests, fixtures, config, exports, and what could break. Skip unasked features, options, and "for later" flexibility.
+- **Challenge before building (only when warranted):** Before implementing, pause and flag the request in plain English if it has weak UX payoff, adds meaningful long-term maintenance cost, or is a big-effort / high-risk task (wide impact or architectural change). State the concern, offer a simpler alternative if one exists, and confirm before proceeding. Skip this check for small, clear, low-risk updates.
 - **Preference order:** Skip if unneeded, then reuse existing codebase code/patterns, then standard library/platform features, then an installed dependency (never add a dependency for a few lines), then minimum working code.
 - **Single source of truth (SSOT):** Keep every rule, schema, contract, token, and configuration value in one authoritative place; reference it rather than duplicating it across files.
 - **Guarded DRY (no premature abstraction):** Reuse existing code first; extract shared logic only once real repetition appears (typically 2–3 real callers) and never when sharing would couple unrelated features. Keep existing structure and conventions; deletion beats addition.
