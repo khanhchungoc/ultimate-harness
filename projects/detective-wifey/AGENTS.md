@@ -5,7 +5,7 @@
 - **No Em Dashes**: Never use em dashes in responses, code, documentation, or UI text. Use a hyphen (`-`) instead.
 - **Code Changes Agent**: Always read and operate under [.agents/agents/frontend-game-developer.md](.agents/agents/frontend-game-developer.md) before and during any code modification.
 - **Global Harness Assets**: Use global `Ponytail` rules from root `AGENTS.md` and global `ui-ux-pro-max`, `motion`, `ui-styling`, and `engineering-standards` skills from `ultimate-harness` (do not duplicate them here).
-- **Project-Only Assets**: Project-specific agent and skills live in this folder (`.agents/agents/frontend-game-developer.md`, `.agents/skills/develop-virtual-app/`, `.agents/skills/research-project-knowledge/`). Sync them into the `detective-wifey` repository's `.agents/` when deploying project updates.
+- **Project-Only Assets**: Project-specific agent and skills live in this folder (`.agents/agents/frontend-game-developer.md`, `.agents/skills/develop-virtual-app/`, `.agents/skills/research-project-knowledge/`). Install them to user scope with `python install.py --project detective-wifey` or link into the repo with `python install.py --project detective-wifey --target <path-to-detective-wifey>`.
 
 ---
 
