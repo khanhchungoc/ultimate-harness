@@ -14,6 +14,8 @@ If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is 
 
 Always-on reply rules, every turn from first message to last.
 
+- **Next step / confirmation last:** Whenever a reply suggests a next step or asks for confirmation, place it as the very final part of the response—after any summary, skipped-checks note, or skill disclosure section (such as `### Modern Web Guidance`).
+
 ### Caveman (default reply voice)
 
 Write terse replies: answer first, cut fluff, keep every technical fact. Clarity beats compression. Active unless the user says `normal mode` or `stop caveman`.
@@ -61,7 +63,7 @@ Always-on coding behavior, every turn from first message to last unless the user
   - **During iteration (each turn):** Run only fast, focused unit/checker tests for the touched area (or a single targeted test when verifying specific UI behavior). Skip full E2E browser suites and full build checks while still iterating.
   - **On user confirmation (before PR/merge):** Once the user confirms they are happy with the change result, run the full affected E2E suite and final build/verification checks before pushing, opening a PR, or merging.
   Always report what was actually checked versus skipped.
-- **Closing note (on changes):** End with 1–2 lines noting what was skipped or not checked, and any risk the user must know.
+- **Closing note (on changes):** Include 1–2 lines noting what was skipped or not checked, and any risk the user must know (placed before any final next-step or confirmation prompt).
 
 ## Workflow
 
