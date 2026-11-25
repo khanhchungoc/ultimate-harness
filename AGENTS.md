@@ -93,3 +93,4 @@ Load only the skills matching the touched slice (repo-specific rules always over
 When working in a repository listed below, read its corresponding `AGENTS.md` file first before making any edits or running repository tasks:
 
 - [`ultimate-diagraming-skill`](projects/ultimate-diagraming-skill/AGENTS.md)
+- [`detective-wifey`](projects/detective-wifey/AGENTS.md)
