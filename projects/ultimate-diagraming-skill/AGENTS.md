@@ -21,6 +21,7 @@ Implementation plans live in `dev/plans/`. Once all phases of a plan are complet
 
 ## Playground (GitHub Pages)
 
-The playground (every diagram type, blank, with a type switcher) deploys itself from `main` via `.github/workflows/playground.yml`, after `dev/tests/e2e/e2e_playground.mjs` passes. Nothing to publish by hand. A new diagram type joins it in the same change (switcher entry, `blank.json`, folder).
+Both playgrounds deploy to the `gh-pages` branch after `dev/tests/e2e/e2e_playground.mjs` passes (nothing to publish by hand). A new diagram type joins the playground in the same change (switcher entry, `blank.json`, folder).
 
-Playground URL: https://khanhchungoc.github.io/ultimate-diagraming-skill/
+- **Staging (`stg`):** `.github/workflows/playground-stg.yml` builds the playground and examples and publishes to `/stg/` — https://khanhchungoc.github.io/ultimate-diagraming-skill/stg/
+- **Production (`main`):** `.github/workflows/playground.yml` verifies signed-off `dev/samples/example-*.html` (`build_examples.py --check`, no regeneration), builds the playground, and publishes to `/` — https://khanhchungoc.github.io/ultimate-diagraming-skill/
