@@ -116,8 +116,71 @@ if yaml is not None:
         finally:
             loader.dispose()
 else:
-    def load_unique_yaml(stream: str):
-        raise RuntimeError("PyYAML is not installed.")
+    class _SimpleYamlError(Exception):
+        def __init__(self, message: str, line: int = 1, duplicate: bool = False):
+            super().__init__(message)
+            self.line = line
+            self.duplicate = duplicate
+
+    def _parse_yaml_scalar(raw: str):
+        val = raw.strip()
+        if not val:
+            return ""
+        if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
+            if val.startswith('"'):
+                try:
+                    return json.loads(val)
+                except ValueError:
+                    return val[1:-1]
+            return val[1:-1].replace("''", "'")
+        if val.startswith("[") and val.endswith("]"):
+            inner = val[1:-1].strip()
+            return [_parse_yaml_scalar(part) for part in inner.split(",") if part.strip()] if inner else []
+        low = val.lower()
+        if low == "true":
+            return True
+        if low == "false":
+            return False
+        if low in ("null", "~"):
+            return None
+        if re.fullmatch(r"-?\d+", val):
+            return int(val)
+        return val
+
+    def _load_simple_yaml(stream: str):
+        data: dict = {}
+        key_lines: dict = {}
+        current_block_key: str | None = None
+        for idx, line in enumerate(stream.splitlines(), start=2):
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#"):
+                continue
+            if current_block_key and re.match(r"^\s+-\s+(.*)$", line):
+                item_raw = re.match(r"^\s+-\s+(.*)$", line).group(1)
+                if not isinstance(data[current_block_key], list):
+                    data[current_block_key] = []
+                data[current_block_key].append(_parse_yaml_scalar(item_raw))
+                continue
+            if current_block_key and re.match(r"^\s+([A-Za-z0-9_.-]+)\s*:\s*(.*)$", line):
+                sm = re.match(r"^\s+([A-Za-z0-9_.-]+)\s*:\s*(.*)$", line)
+                if not isinstance(data[current_block_key], dict):
+                    data[current_block_key] = {}
+                data[current_block_key][sm.group(1)] = _parse_yaml_scalar(sm.group(2))
+                continue
+            current_block_key = None
+            m = re.match(r"^([A-Za-z0-9_.-]+)\s*:\s*(.*)$", line)
+            if not m:
+                raise _SimpleYamlError(f"Unsupported YAML frontmatter line without PyYAML: {stripped!r}", line=idx)
+            key, rest = m.group(1), m.group(2)
+            if key in data:
+                raise _SimpleYamlError(f"Duplicate YAML key: {key!r}", line=idx, duplicate=True)
+            key_lines[key] = idx
+            if rest.strip() == "":
+                data[key] = {}
+                current_block_key = key
+            else:
+                data[key] = _parse_yaml_scalar(rest)
+        return data, key_lines
 
 
 def finding(path: Path, line: int, rule: str, message: str,
@@ -134,9 +197,15 @@ def frontmatter_findings(path: Path, content: str, runtime: str = "auto",
     if not match:
         return [finding(path, 1, "frontmatter-missing",
                         "Expected a YAML frontmatter block delimited by ---.")]
-    if yaml is None:
-        return [finding(path, 1, "yaml-dependency", "Install PyYAML from scripts/requirements.txt.")]
     frontmatter = match.group(1)
+    if yaml is None:
+        try:
+            data, key_lines = _load_simple_yaml(frontmatter)
+        except _SimpleYamlError as exc:
+            rule = "frontmatter-duplicate-key" if exc.duplicate else "frontmatter-yaml"
+            return [finding(path, exc.line, rule, str(exc))]
+        return metadata_findings(path, data, key_lines, runtime, kind, template,
+                                 content[match.end():])
     try:
         data = load_unique_yaml(frontmatter)
     except yaml.YAMLError as exc:
@@ -398,29 +467,24 @@ def main(argv=None) -> int:
     root = Path(args.root).resolve() if args.root else find_root(Path.cwd())
     files = []
     status = 0
-    if yaml is None:
-        issues = [finding(Path(__file__), 1, "yaml-dependency",
-                          "PyYAML is required. Install the dependency in scripts/requirements.txt.")]
+    try:
+        if not root.is_dir():
+            raise ValueError(f"Workspace root is not a directory: {root}")
+        files = collect_files(root, args.path)
+    except (OSError, ValueError) as exc:
+        issues = [finding(root, 1, "input-path", str(exc))]
         status = 2
     else:
-        try:
-            if not root.is_dir():
-                raise ValueError(f"Workspace root is not a directory: {root}")
-            files = collect_files(root, args.path)
-        except (OSError, ValueError) as exc:
-            issues = [finding(root, 1, "input-path", str(exc))]
+        # File-content failures belong to the affected file, not the scope
+        # selector. Keep diagnostics from every file in the selected scope.
+        kind = args.kind
+        if (kind == "auto" and args.path and (root / args.path).is_file()
+                and args.runtime not in ("auto", "universal")):
+            detected = artifact_kind(files[0], args.runtime)
+            kind = "agent" if detected == "resource" else detected
+        issues = [issue for path in files for issue in validate_file(path, args.runtime, kind)]
+        if any(issue["rule"] == "toml-dependency" for issue in issues):
             status = 2
-        else:
-            # File-content failures belong to the affected file, not the scope
-            # selector. Keep diagnostics from every file in the selected scope.
-            kind = args.kind
-            if (kind == "auto" and args.path and (root / args.path).is_file()
-                    and args.runtime not in ("auto", "universal")):
-                detected = artifact_kind(files[0], args.runtime)
-                kind = "agent" if detected == "resource" else detected
-            issues = [issue for path in files for issue in validate_file(path, args.runtime, kind)]
-            if any(issue["rule"] == "toml-dependency" for issue in issues):
-                status = 2
     for issue in issues:
         try:
             issue["file"] = Path(issue["file"]).relative_to(root).as_posix()
