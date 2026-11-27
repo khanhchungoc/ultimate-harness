@@ -91,7 +91,9 @@ tools:
 4. **Automated Verification & Audits**:
    - For story-data changes, complete `.agents/skills/level-designer/references/story-first-design.md` Section 5 review.
    - For virtual apps, run `develop-virtual-app` validation (`validate_app_design.py`).
-   - Run fast checks during iteration (`npm test`, `npm run lint`, `npx tsc -b`); run full build/PWA verification (`npm run build`, `node --test scripts/pwa.test.mjs`) on confirmation before PR/merge.
+   - **Vertical-Slice Tests**: When creating or changing behavior in an active app or core feature (skip unimplemented stub apps), add or update its co-located unit test (`src/<layer>/<slice>/*.test.{ts,tsx}`) and matching Playwright browser E2E slice (`e2e/<slice>.spec.ts`) for real gestures, persistence, or UI flows.
+   - During iteration and merges to `stg`, run only the touched unit slice (`npx vitest run <slice-path>`), matching E2E slice (`npx playwright test e2e/<slice>.spec.ts`), `npm run lint`, and `npx tsc -b`.
+   - Before PR to `main`, run full verification (`npm test`, `npm run test:e2e`, `npm run build`, `node --test scripts/pwa.test.mjs`).
    - For UI tasks, run browser audits via `chrome-devtools` MCP on active dev server: inspect bounding boxes (>= 44x44px), test `useSwipeBack` and long-press pinning, verify session serialization, and check console for errors.
 
 ---

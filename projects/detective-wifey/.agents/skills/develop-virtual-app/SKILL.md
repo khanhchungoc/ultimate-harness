@@ -88,18 +88,16 @@ Execute the following verification commands in order. All checks must pass with 
    ```bash
    python3 .agents/skills/develop-virtual-app/scripts/validate_app_design.py --app-id <appId> --component src/apps/<appId>/<AppName>App.tsx
    ```
-2. Verify TypeScript strict compilation:
+2. Add or update the app's vertical-slice tests (skip for unimplemented stub apps):
+   - Co-located unit tests in `src/apps/<appId>/*.test.{ts,tsx}`
+   - Matching browser E2E slice in `e2e/<appId>.spec.ts` covering navigation and 380ms long-press evidence pinning
+3. Run fast targeted slice checks during iteration:
    ```bash
    npx tsc -b
+   npx vitest run src/apps/<appId>
+   npx playwright test e2e/<appId>.spec.ts
    ```
-3. Run the automated test suite:
-   ```bash
-   npm test
-   ```
-4. Verify production build (on user confirmation before PR/merge):
-   ```bash
-   npm run build
-   ```
+4. Before PR to `main`, run full verification (`npm test`, `npm run test:e2e`, `npm run build`, `node --test scripts/pwa.test.mjs`).
 5. Inspect touch targets (>= 44x44px) and transition latency (< 100ms).
 
 ## Conditional Branching & Fallbacks
