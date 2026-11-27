@@ -1,12 +1,11 @@
 <!-- CODEGRAPH_START -->
 ## CodeGraph
 
-In repositories indexed by CodeGraph (a `.codegraph/` directory exists at the repo root), reach for it BEFORE grep/find or reading files when you need to understand or locate code:
+Use CodeGraph ONLY when a task requires exploring or editing source code in a repository — skip it completely for non-code tasks (docs, harness rules, planning, or reviews) so startup stays fast.
 
+- **On-demand init (first code task in a repo):** If no `.codegraph/` directory exists yet and you are about to explore or edit a non-trivial codebase, initialize it lazily once for that session (install `@colbymchenry/codegraph` to `~/.local` if `codegraph` is not on `PATH`, then run `CODEGRAPH_TELEMETRY=0 codegraph init -y --local-only`). If `.codegraph/codegraph.db` already exists, use it directly (or run `CODEGRAPH_TELEMETRY=0 codegraph sync -q` if stale).
 - **MCP tool** (when available): `codegraph_explore` answers most code questions in one call — the relevant symbols' verbatim source plus the call paths between them, including dynamic-dispatch hops grep can't follow. Name a file or symbol in the query to read its current line-numbered source. If it's listed but deferred, load it by name via tool search.
 - **Shell** (always works): `codegraph explore "<symbol names or question>"` prints the same output.
-
-If there is no `.codegraph/` directory, skip CodeGraph entirely — indexing is the user's decision.
 <!-- CODEGRAPH_END -->
 
 
@@ -60,8 +59,8 @@ Always-on coding behavior, every turn from first message to last unless the user
 - **Pragmatic over dogmatic:** Treat principles and best practices as defaults, not blind laws. When a real-world constraint (complexity, compatibility, performance, schedule, or existing architecture) forces a meaningful trade-off against a best practice, raise it to the user with plain-English pros, cons, and a recommended option before deciding.
 - **Never cut corners:** Fix root causes once in shared code; keep trust-boundary validation, error handling, security, and accessibility intact. Mark any known shortcut with `shortcut: <limit>, <when to upgrade>`.
 - **Testing baseline:** For non-trivial behavior changes, add or update tests that verify real behavior and important failure/edge cases (skip for trivial edits). Use a two-stage cadence:
-  - **During iteration (each turn):** Run only fast, focused unit/checker tests for the touched area (or a single targeted test when verifying specific UI behavior). Skip full E2E browser suites and full build checks while still iterating.
-  - **On user confirmation (before PR/merge):** Once the user confirms they are happy with the change result, run the full affected E2E suite and final build/verification checks before pushing, opening a PR, or merging.
+  - **During iteration & merges to `stg`:** Run only simple, fast, minimal tests for the touched area (unit/checker tests, plus a single targeted test only when verifying a specific UI bug). Skip full E2E browser suites and full build checks until promoting to production.
+  - **On PR to `main` (production):** Run the E2E suite for all changed items (`origin/main..origin/stg` when promoting from `stg`, or the feature branch diff when the repo has no `stg` branch) plus final build/verification checks before opening or merging the PR to `main`.
   Always report what was actually checked versus skipped.
 - **Closing note (on changes):** Include 1–2 lines noting what was skipped or not checked, and any risk the user must know (placed before any final next-step or confirmation prompt).
 
